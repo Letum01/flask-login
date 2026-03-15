@@ -1,0 +1,24 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+<h3>Edit</h3>
+
+<form method="post"
+      action="/update/{{item[0]}}">
+
+<input
+    class="form-control"
+    name="name"
+    value="{{item[1]}}"
+>
+
+<br>
+
+<button class="btn btn-primary">
+Update
+</button>
+
+</form>
+
+{% endblock %}

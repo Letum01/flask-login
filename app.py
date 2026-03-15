@@ -1,9 +1,21 @@
+import os
 from flask import Flask, render_template, request, redirect, session
 import sqlite3
 
 app = Flask(__name__)
 app.secret_key = "123"
 
+
+# ================= UPLOAD =================
+
+UPLOAD_FOLDER = "static/uploads"
+
+app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
+
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+
+# ================= DB =================
 
 def get_db():
     return sqlite3.connect("database.db")
@@ -38,6 +50,7 @@ def register():
         )
 
         db.commit()
+        db.close()
 
         return redirect("/login")
 
@@ -62,6 +75,8 @@ def login():
         )
 
         data = cur.fetchone()
+
+        db.close()
 
         if data:
             session["user"] = user
@@ -94,6 +109,8 @@ def items():
 
     data = cur.fetchall()
 
+    db.close()
+
     return render_template("items.html", data=data)
 
 
@@ -107,14 +124,30 @@ def add():
 
     name = request.form["name"]
 
+    file = request.files.get("image")
+
+    filename = ""
+
+    if file and file.filename != "":
+
+        filename = file.filename
+
+        path = os.path.join(
+            app.config["UPLOAD_FOLDER"],
+            filename
+        )
+
+        file.save(path)
+
     db = get_db()
 
     db.execute(
-        "INSERT INTO items(name) VALUES (?)",
-        (name,)
+        "INSERT INTO items(name,image,user) VALUES (?,?,?)",
+        (name, filename, session["user"])
     )
 
     db.commit()
+    db.close()
 
     return redirect("/items")
 
@@ -135,9 +168,87 @@ def delete(id):
     )
 
     db.commit()
+    db.close()
 
     return redirect("/items")
 
+
+# ================= EDIT =================
+
+@app.route("/edit/<int:id>")
+def edit(id):
+
+    if "user" not in session:
+        return redirect("/login")
+
+    db = get_db()
+
+    cur = db.execute(
+        "SELECT * FROM items WHERE id=?",
+        (id,)
+    )
+
+    data = cur.fetchone()
+
+    db.close()
+
+    return render_template(
+        "edit.html",
+        item=data
+    )
+
+
+# ================= UPDATE =================
+
+@app.route("/update/<int:id>", methods=["POST"])
+def update(id):
+
+    if "user" not in session:
+        return redirect("/login")
+
+    name = request.form["name"]
+
+    db = get_db()
+
+    db.execute(
+        "UPDATE items SET name=? WHERE id=?",
+        (name, id)
+    )
+
+    db.commit()
+    db.close()
+
+    return redirect("/items")
+
+
+# ================= SEARCH =================
+
+@app.route("/search", methods=["POST"])
+def search():
+
+    if "user" not in session:
+        return redirect("/login")
+
+    name = request.form["name"]
+
+    db = get_db()
+
+    cur = db.execute(
+        "SELECT * FROM items WHERE name LIKE ?",
+        ("%" + name + "%",)
+    )
+
+    data = cur.fetchall()
+
+    db.close()
+
+    return render_template(
+        "items.html",
+        data=data
+    )
+
+
+# ================= RUN =================
 
 if __name__ == "__main__":
     app.run(debug=True)

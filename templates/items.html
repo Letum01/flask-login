@@ -1,34 +1,132 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
 <h2>Items</h2>
 
-<a href="/logout">Logout</a>
 
-<form method="post" action="/add">
-    <input name="name">
-    <button>Add</button>
+<!-- ================= ADD ================= -->
+
+<form
+method="post"
+action="/add"
+enctype="multipart/form-data"
+>
+
+<input
+name="name"
+placeholder="Item name"
+required
+>
+
+<input
+type="file"
+name="image"
+>
+
+<button>
+Add
+</button>
+
 </form>
 
+
+<!-- ================= SEARCH ================= -->
+
+<form
+method="post"
+action="/search"
+>
+
+<input
+name="name"
+placeholder="Search name"
+>
+
+<button>
+Search
+</button>
+
+</form>
+
+
 <hr>
+
+
+<!-- ================= TABLE ================= -->
 
 <table border="1">
 
 <tr>
-    <th>ID</th>
-    <th>Name</th>
-    <th>Delete</th>
+
+<th>ID</th>
+<th>Name</th>
+<th>Image</th>
+<th>Edit</th>
+<th>Delete</th>
+
 </tr>
+
 
 {% for i in data %}
 
 <tr>
-    <td>{{i[0]}}</td>
-    <td>{{i[1]}}</td>
-    <td>
-        <a href="/delete/{{i[0]}}">
-            Delete
-        </a>
-    </td>
+
+<td>
+{{ i[0] }}
+</td>
+
+<td>
+{{ i[1] }}
+</td>
+
+
+<td>
+
+{% if i[2] %}
+
+<img
+src="/static/uploads/{{ i[2] }}"
+width="80"
+>
+
+{% else %}
+
+No image
+
+{% endif %}
+
+</td>
+
+
+<td>
+
+<a
+href="/edit/{{ i[0] }}"
+>
+Edit
+</a>
+
+</td>
+
+
+<td>
+
+<a
+href="/delete/{{ i[0] }}"
+onclick="return confirm('Delete?')"
+>
+Delete
+</a>
+
+</td>
+
+
 </tr>
 
 {% endfor %}
 
 </table>
+
+
+{% endblock %}
