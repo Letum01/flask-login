@@ -56,7 +56,28 @@ def register():
 
     return render_template("register.html")
 
+@app.route("/api/register", methods=["POST"])
+def api_register():
 
+    data = request.json
+
+    user = data["user"]
+    password = data["password"]
+
+    db = get_db()
+
+    db.execute(
+        "INSERT INTO users(user,password) VALUES (?,?)",
+        (user, password)
+    )
+
+    db.commit()
+    db.close()
+
+    return {
+        "status": "ok",
+        "message": "registered"
+    }
 # ================= LOGIN =================
 
 @app.route("/login", methods=["GET", "POST"])
@@ -83,6 +104,35 @@ def login():
             return redirect("/items")
 
     return render_template("login.html")
+
+@app.route("/api/login", methods=["POST"])
+def api_login():
+
+    data = request.json
+
+    user = data["user"]
+    password = data["password"]
+
+    db = get_db()
+
+    cur = db.execute(
+        "SELECT * FROM users WHERE user=? AND password=?",
+        (user, password)
+    )
+
+    r = cur.fetchone()
+
+    db.close()
+
+    if not r:
+        return {
+            "status": "fail"
+        }
+
+    return {
+        "status": "ok",
+        "user": r[1]
+    }
 
 
 # ================= LOGOUT =================
@@ -247,6 +297,117 @@ def search():
         data=data
     )
 
+@app.route("/api/items")
+def api_items():
+
+    db = get_db()
+
+    cur = db.execute(
+        "SELECT * FROM items"
+    )
+
+    rows = cur.fetchall()
+
+    db.close()
+
+    data = []
+
+    for r in rows:
+
+        data.append({
+            "id": r[0],
+            "name": r[1],
+            "image": r[2],
+            "user": r[3]
+        })
+
+    return {
+        "items": data
+    }
+@app.route("/api/items/<int:id>")
+def api_item(id):
+
+    db = get_db()
+
+    cur = db.execute(
+        "SELECT * FROM items WHERE id=?",
+        (id,)
+    )
+
+    r = cur.fetchone()
+
+    db.close()
+
+    if not r:
+        return {"error": "not found"}
+
+    return {
+        "id": r[0],
+        "name": r[1],
+        "image": r[2],
+        "user": r[3]
+    }
+@app.route("/api/items", methods=["GET"])
+def api_get_items():
+
+    db = get_db()
+
+    cur = db.execute(
+        "SELECT * FROM items"
+    )
+
+    rows = cur.fetchall()
+
+    db.close()
+
+    data = []
+
+    for r in rows:
+
+        data.append({
+            "id": r[0],
+            "name": r[1],
+            "image": r[2],
+            "user": r[3]
+        })
+
+    return {
+        "items": data
+    }
+@app.route("/api/items", methods=["POST"])
+def api_add():
+
+    name = request.form["name"]
+
+    db = get_db()
+
+    db.execute(
+        "INSERT INTO items(name) VALUES (?)",
+        (name,)
+    )
+
+    db.commit()
+    db.close()
+
+    return {
+        "status": "ok"
+    }
+@app.route("/api/items/<int:id>", methods=["DELETE"])
+def api_delete(id):
+
+    db = get_db()
+
+    db.execute(
+        "DELETE FROM items WHERE id=?",
+        (id,)
+    )
+
+    db.commit()
+    db.close()
+
+    return {
+        "status": "deleted"
+    }
 
 # ================= RUN =================
 
